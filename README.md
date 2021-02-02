@@ -26,6 +26,7 @@ Tested on windows 10.
   ```bash
   npm install
   npm install --save-dev nodemon
+  npm i -g peer
   ```
 
 ## Certificate
@@ -55,7 +56,7 @@ rm csr.pem
 
 ## Run it
 ```On two different terminals run:
-npm run devStar 
+npm run devStart
 # which launches the server responsible of setting-up the room
 peerjs --port 3001
 # which launches the server responsible of setting-up peer connections

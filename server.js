@@ -3,11 +3,13 @@ const express = require('express')
 const app = express()
 const fs = require('fs')
 const https = require('https')
+///const http = require('http')
 const options = {
   key:fs.readFileSync('client-1.local.key'),
   cert: fs.readFileSync('client-1.local.crt')
 }
 const httpsServer = https.createServer(options, app)
+//const httpServer = http.createServer(app)
 const io = require('socket.io')(httpsServer)
 
 app.set('view engine', 'ejs')
