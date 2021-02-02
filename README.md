@@ -1,13 +1,13 @@
 # Dummy installation
-This is repo is forked from [Zoom-Clone-With-WebRTC](https://github.com/WebDevSimplified/Zoom-Clone-With-WebRTC) and here is the [tutorial video](
+This is repo is a fork starting from [this pull request](https://github.com/WebDevSimplified/Zoom-Clone-With-WebRTC/pull/32)  of  [Zoom-Clone-With-WebRTC](https://github.com/WebDevSimplified/Zoom-Clone-With-WebRTC). You can also find a video tutorial [here](
 https://www.youtube.com/watch?v=DvlyzDZDEq4&t=684s).  
-Since I want to deploy this application and access it by IP address or domain name instead of `loaclhost`, I found [this issue](https://github.com/WebDevSimplified/Zoom-Clone-With-WebRTC/issues/23). After a little bit of modification, it works.  
+My goal is to add E2E cryptography capability to this project by taking inspiration from [this example](https://webrtchacks.com/true-end-to-end-encryption-with-webrtc-insertable-streams/) whose source code can be found [here](https://github.com/webrtc/samples/tree/gh-pages/src/content/insertable-streams/endtoend-encryption).
 
-Tested on ubuntu-mate 18.04 x86_64, VM Player and windows 10, baremetal.
+Tested on windows 10.
 ## Dependencies
 - Of course clone this repo:
   ```bash
-  git clone https://github.com/WebDevSimplified/Zoom-Clone-With-WebRTC
+  git clone https://github.com/Santagiustina-F/Zoom-Clone-With-WebRTC.git
   ```
 - Install `nodejs` and `npm`  
   It's recommanded to use nodejs 10.x or higher. nodejs LTS(12.x) is selected here.  
@@ -54,12 +54,15 @@ rm csr.pem
 ```
 
 ## Run it
-```bash
-sudo npm run devStart
+```On two different terminals run:
+npm run devStar 
+# which launches the server responsible of setting-up the room
+peerjs --port 3001
+# which launches the server responsible of setting-up peer connections
 ```
 And you can enter 
 ```
-https://your.IP.addr/
+https://yourIP.addr:port/
 ```
 in your borwser. It's likely to have a warning `NET::ERR_CERT_AUTHORITY_INVALID` or somthing like that. For Chrome, just click *Advance*, *Continue...*  
 It will automatically generate a uuid and redirect you to your chatting room. For anyone want to join you, you can just share the url of your chatting room.
