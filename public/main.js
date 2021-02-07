@@ -146,7 +146,7 @@ function call() {
     setupReceiverTransform(e.receiver);
     gotRemoteStream(e.streams[0]);
   });
-  startToEnd.pc1.getSenders().forEach(setupSenderTransform);
+  //startToEnd.pc1.getSenders().forEach(setupSenderTransform);
   startToEnd.negotiate();
 
   console.log('Video pipes created');

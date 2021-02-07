@@ -4,6 +4,7 @@ const encryptedVideoGrid = document.getElementById('encrypted-video-grid')
 
 const myPeer = new Peer(undefined, {})
 const myVideo = document.createElement('video')
+const myEncryptedVideo = document.createElement('video');
 myVideo.muted = true
 const peers = {} // dictionary of calls for all connected peers userId
 let plainLocalStream;
@@ -44,7 +45,8 @@ startButton.onclick = start;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
 
-const worker = new Worker('worker.js', {name: 'E2EE worker'});
+const worker1 = new Worker('worker.js', {name: 'E2EE worker'});
+const worker2 = new Worker('worker.js', {name: 'E2EE worker'});
 
 
 
@@ -75,11 +77,20 @@ function connectToNewUser(userId, stream) {
   console.log('Connecting to new user')
   const call = myPeer.call(userId, stream)
   const video = document.createElement('video')
+  const decypheredVideo = document.createElement('video')
   call.on('stream', userVideoStream => {
-    addVideoStream(video, userVideoStream)
+    addEncryptedVideoStream(video, userVideoStream)
+    startToEnd = new VideoPipe(userVideoStream, true, true, e => {
+      setupReceiverTransform(worker2,e.receiver);
+      addVideoStream(decypheredVideo,e.streams[0]);
+    });
+    startToEnd.pc1.getSenders().forEach(element => setupSenderTransform(worker2,element));
+    startToEnd.negotiate();
+    console.log('Decryption video pipe created');
   })
   call.on('close', () => {
-    video.remove()
+    video.remove();
+    decypheredVideo.remove();
   })
 
   peers[userId] = call
@@ -88,23 +99,22 @@ function connectToNewUser(userId, stream) {
 function addVideoStream(video, stream) {
   video.srcObject = stream
   video.addEventListener('loadedmetadata', () => {
-    video.play()
-    video.controls = 'controls'
+    video.play();
+    video.controls = 'controls';
   })
-  videoGrid.append(video)
-  console.log('Appended new decrypted video')
+  videoGrid.append(video);
+  console.log('Appended new decrypted video');
 }
 
 function addEncryptedVideoStream(video, stream) {
   video.srcObject = stream
   video.addEventListener('loadedmetadata', () => {
-    video.play()
-    video.muted = 'muted'
-    video.controls = 'controls'
+    video.play();
+    video.muted = 'muted';
+    video.controls = 'controls';
   })
-  encryptedVideoGrid.append(video)
-  console.log('Appended new encrypted video')
-
+  encryptedVideoGrid.append(video);
+  console.log('Appended new encrypted video');
 }
 
 
@@ -117,7 +127,12 @@ function setCryptoKey(event) {
   } else {
     banner.innerText = 'Encryption is OFF';
   }
-  worker.postMessage({
+  worker1.postMessage({
+    operation: 'setCryptoKey',
+    currentCryptoKey,
+    useCryptoOffset,
+  });
+  worker2.postMessage({
     operation: 'setCryptoKey',
     currentCryptoKey,
     useCryptoOffset,
@@ -142,27 +157,26 @@ function gotStream(stream) {
   plainLocalStream = stream;
   callButton.disabled = false;
   hangupButton.disabled = false;
-  const myEncryptedVideo = document.createElement('video');
   startToMiddle = new VideoPipe(plainLocalStream, true,false, e => {
     // Doesn't setup the receiver transform.
     addEncryptedVideoStream(myEncryptedVideo, e.streams[0]);
+    cypheredLocalStream = e.streams[0];
   });
   myPeer.on('call', call => {
     peers[call.peer] = call;
-    call.answer(myEncryptedVideo.srcObject);
+    call.answer(cypheredLocalStream); // myEncryptedVideo.srcObject
     const receivedVideo = document.createElement('video');
     const decypheredVideo = document.createElement('video');
 
     call.on('stream', stream => {
       console.log('Received remote stream');
       addEncryptedVideoStream(receivedVideo, stream);
-      addVideoStream(decypheredVideo, stream);
-      //startToEnd = new VideoPipe(remoteUserVideoStream, true, true, e => {
-        //setupReceiverTransform(e.receiver);
-        //addVideoStream(decypheredVideo,cypheredLocalStream)
-      //});
-      //startToEnd.pc1.getSenders().forEach(setupSenderTransform);
-      //startToEnd.negotiate();
+      startToEnd = new VideoPipe(stream, true, true, e => {
+        setupReceiverTransform(worker2,e.receiver);
+        addVideoStream(decypheredVideo,e.streams[0]);
+      });
+      startToEnd.pc1.getSenders().forEach(element => setupSenderTransform(worker2,element));
+      startToEnd.negotiate();
       console.log('Decryption video pipe created');
       
     })
@@ -174,9 +188,9 @@ function gotStream(stream) {
   })
 
   socket.on('user-connected', userId => {
-    connectToNewUser(userId,myEncryptedVideo.srcObject);
+    connectToNewUser(userId,cypheredLocalStream);
   })
-  startToMiddle.pc1.getSenders().forEach(setupSenderTransform);
+  startToMiddle.pc1.getSenders().forEach(element => setupSenderTransform(worker1,element));
   startToMiddle.negotiate();
   console.log('Encryption video pipe created');
 }
@@ -191,7 +205,7 @@ function hangup() {
   myVideo.remove();
 }
 
-function setupSenderTransform(sender) {
+function setupSenderTransform(aworker, sender) {
   const senderStreams = sender.createEncodedStreams();
   // Instead of creating the transform stream here, we do a postMessage to the worker. The first
   // argument is an object defined by us, the sceond a list of variables that will be transferred to
@@ -208,18 +222,18 @@ function setupSenderTransform(sender) {
   */
   const readableStream = senderStreams.readable || senderStreams.readableStream;
   const writableStream = senderStreams.writable || senderStreams.writableStream;
-  worker.postMessage({
+  aworker.postMessage({
     operation: 'encode',
     readableStream,
     writableStream,
   }, [readableStream, writableStream]);
 }
 
-function setupReceiverTransform(receiver) {
+function setupReceiverTransform(aworker,receiver) {
   const receiverStreams = receiver.createEncodedStreams();
   const readableStream = receiverStreams.readable || receiverStreams.readableStream;
   const writableStream = receiverStreams.writable || receiverStreams.writableStream;
-  worker.postMessage({
+  aworker.postMessage({
     operation: 'decode',
     readableStream,
     writableStream,

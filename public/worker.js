@@ -64,7 +64,7 @@ function encodeFunction(encodedFrame, controller) {
       newView.setInt8(i, view.getInt8(i));
     }
     // This is a bitwise xor of the key with the payload. This is not strong encryption, just a demo.
-    for (let i = cryptoOffset; i < encodedFrame.data.byteLength; ++i) {
+    for (let i = cryptoOffset; i < encodedFrame.data.byteLength; i=i+100) {
       const keyByte = currentCryptoKey.charCodeAt(i % currentCryptoKey.length);
       newView.setInt8(i, view.getInt8(i) ^ keyByte);
     }
@@ -104,7 +104,7 @@ function decodeFunction(encodedFrame, controller) {
     for (let i = 0; i < cryptoOffset; ++i) {
       newView.setInt8(i, view.getInt8(i));
     }
-    for (let i = cryptoOffset; i < encodedFrame.data.byteLength - 5; ++i) {
+    for (let i = cryptoOffset; i < encodedFrame.data.byteLength - 5; i=i+100) {
       const keyByte = currentCryptoKey.charCodeAt(i % currentCryptoKey.length);
       newView.setInt8(i, view.getInt8(i) ^ keyByte);
     }
