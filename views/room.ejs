@@ -10,9 +10,20 @@
   <script defer src="https://unpkg.com/peerjs@1.3.0/dist/peerjs.min.js"></script>
   <script src="/socket.io/socket.io.js" defer></script>
   <script src="script.js" defer></script>
+  <script src="videopipe.js" defer></script>
+  <!-- <script src="worker.js" defer></script> -->
+
   <title>Document</title>
   <style>
     #video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 300px);
+      grid-auto-rows: 300px;
+      grid-column-gap: 10px;
+      grid-row-gap: 10px;
+    }
+
+    #encrypted-video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, 300px);
       grid-auto-rows: 300px;
@@ -29,5 +40,21 @@
 </head>
 <body>
   <div id="video-grid"></div>
+  <p>
+    Crypto key: <input type="text" id="crypto-key">
+    Encrypt first bytes: <input type="checkbox" id="crypto-offset">
+  </p>
+  <span id="banner"></span>
+  <div id="buttons">
+    <button id="start">Start</button>
+    <button id="call" disabled>Call</button>
+    <button id="hangup" disabled>Hang Up</button>
+</div>
+<div id="status"></div>
+<p>
+  <h2>Encrypted streams</h2>
+  <div id="encrypted-video-grid"></div>
+</p>
+
 </body>
 </html>
